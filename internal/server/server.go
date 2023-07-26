@@ -27,7 +27,18 @@ const (
 
 func (s *grpcServer) GetMovieByID(ctx context.Context, req *api.GetMovieByIDRequest) (*api.GetMovieByIDResponse, error) {
 
-	err, resp := external.GetMovieByID(req.Id)
+	redisKey := "movie-" + req.GetId()
+	val, err := s.redis.Get(redisKey).Result()
+	if err != nil {
+		fmt.Printf("GetMovieByID : error get data from redis : %s\n", err)
+	} else {
+		movieByIDResp := &api.GetMovieByIDResponse{}
+		json.Unmarshal([]byte(val), &movieByIDResp)
+		fmt.Println("GetMovieByID : getting data from redis ...")
+		return movieByIDResp, nil
+	}
+
+	err, resp := external.GetMovieByID(req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -58,6 +69,17 @@ func (s *grpcServer) GetMovieByID(ctx context.Context, req *api.GetMovieByIDRequ
 		PosterUrl: data.Poster,
 	}
 
+	json, err := json.Marshal(movieByIDResp)
+	if err != nil {
+		fmt.Println("GetMovieByID : error marshalling to json : %s\n", err)
+	}
+
+	// we can call set with a `Key` and a `Value`.
+	err = s.redis.Set(redisKey, json, time.Duration(REDIS_EXP)*time.Second).Err()
+	if err != nil {
+		fmt.Printf("GetMovieByID : error storing to redis : %s\n", err)
+	}
+
 	return movieByIDResp, nil
 }
 
@@ -70,7 +92,7 @@ func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequ
 	} else {
 		searchMovieResp := &api.SearchMoviesResponse{}
 		json.Unmarshal([]byte(val), &searchMovieResp)
-		fmt.Println("getting data from redis ...")
+		fmt.Println("SearchMovies : getting data from redis ...")
 		return searchMovieResp, nil
 	}
 
@@ -121,11 +143,8 @@ func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequ
 
 	// we can call set with a `Key` and a `Value`.
 	err = s.redis.Set(redisKey, json, time.Duration(REDIS_EXP)*time.Second).Err()
-
-	// if there has been an error setting the value
-	// handle the error
 	if err != nil {
-		fmt.Printf("SearchMovies : error storing to redis : %s\n", err)
+		fmt.Println("SearchMovies : error storing to redis : %s\n", err)
 	}
 
 	return searchMovieResp, nil
