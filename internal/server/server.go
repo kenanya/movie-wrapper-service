@@ -81,8 +81,22 @@ func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequ
 		fmt.Printf("SearchMovies : error converting total results : %s\n", err)
 		total = 0
 	}
+
+	var movies []*api.MovieResult
+
+	for _, item := range data.Search {
+		movie := &api.MovieResult{
+			Id:        item.ImdbID,
+			Title:     item.Title,
+			Year:      item.Year,
+			Type:      item.Type,
+			PosterUrl: item.Poster,
+		}
+		movies = append(movies, movie)
+	}
+
 	searchMovieResp := &api.SearchMoviesResponse{
-		Movies:       nil,
+		Movies:       movies,
 		TotalResults: total,
 	}
 
