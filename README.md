@@ -8,14 +8,17 @@ Stack Tech: Golang, Redis, gRPC
 ## B. Clone/Download Repo
     git clone https://github.com/kenanya/omdb.git
 
-## C. How to Start
+## C. Installing Dependencies
+We need to install <a href="https://redis.io/docs/getting-started/installation/">Redis Client</a> before running the project.
+
+## D. How to Start
 cd omdb<br/>
 go run cmd\server\main.go
 
-## D. Consume Service
+## E. Consume Service
 We can use <a href="https://appimage.github.io/BloomRPC/">BloomRPC</a> to test consuming this service. After you download and install the BloomRPC, you have to import the protobuf file at omdb/api/v1/omdb-service.proto. As the default, you will get the initial random value as sample request when the protobuf file has been imported. You can use the initial value or yours to test the service.
 
-## E. The API documentation
+## F. The API documentation
 Below are the sample requests and expected responses for each API:
 ### 1. Get movie by ID
 #### Sample Request
@@ -80,7 +83,7 @@ Below are the sample requests and expected responses for each API:
 "total_results": "439"
 }
 
-## F. Feature Development
+## G. Feature Development
 Unit tests and environment variable will be added in the near future.
 
 
