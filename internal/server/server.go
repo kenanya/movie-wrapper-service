@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -11,12 +12,18 @@ import (
 	"omdb/external"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // We define a server struct that implements the server interface. 🥳🥳🥳
 type grpcServer struct {
 	api.UnimplementedOMDBServiceServer
+	redis *redis.Client
 }
+
+const (
+	REDIS_EXP int64 = 240
+)
 
 func (s *grpcServer) GetMovieByID(ctx context.Context, req *api.GetMovieByIDRequest) (*api.GetMovieByIDResponse, error) {
 
@@ -55,6 +62,18 @@ func (s *grpcServer) GetMovieByID(ctx context.Context, req *api.GetMovieByIDRequ
 }
 
 func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequest) (*api.SearchMoviesResponse, error) {
+
+	redisKey := "search-movies-" + req.GetQuery() + "-" + req.GetType() + "-" + strconv.FormatUint(req.GetPage(), 10)
+	val, err := s.redis.Get(redisKey).Result()
+	if err != nil {
+		fmt.Printf("SearchMovies : error get data from redis : %s\n", err)
+	} else {
+		searchMovieResp := &api.SearchMoviesResponse{}
+		json.Unmarshal([]byte(val), &searchMovieResp)
+		fmt.Println("getting data from redis ...")
+		return searchMovieResp, nil
+	}
+
 	err, resp := external.SearchMovie(req.GetQuery(), req.GetType(), int(req.GetPage()))
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -95,12 +114,28 @@ func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequ
 		TotalResults: total,
 	}
 
+	json, err := json.Marshal(searchMovieResp)
+	if err != nil {
+		fmt.Println("SearchMovies : error marshalling to json : %s\n", err)
+	}
+
+	// we can call set with a `Key` and a `Value`.
+	err = s.redis.Set(redisKey, json, time.Duration(REDIS_EXP)*time.Second).Err()
+
+	// if there has been an error setting the value
+	// handle the error
+	if err != nil {
+		fmt.Printf("SearchMovies : error storing to redis : %s\n", err)
+	}
+
 	return searchMovieResp, nil
 }
 
-func NewGRPCServer() *grpc.Server {
+func NewGRPCServer(redis *redis.Client) *grpc.Server {
 	gsrv := grpc.NewServer()
-	srv := grpcServer{}
+	srv := grpcServer{
+		redis: redis,
+	}
 	api.RegisterOMDBServiceServer(gsrv, &srv)
 	return gsrv
 }

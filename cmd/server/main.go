@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/go-redis/redis"
 	"log"
 	"net"
 	"omdb/internal/server"
@@ -15,7 +17,17 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	log.Printf("Listening on %s", port)
-	srv := server.NewGRPCServer()
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:9736",
+		Password: "",
+		DB:       0,
+	})
+
+	pong, err := redisClient.Ping().Result()
+	fmt.Println(pong, err)
+
+	srv := server.NewGRPCServer(redisClient)
 	// Register reflection service on gRPC server.
 	// reflection.Register(srv)
 	if err := srv.Serve(lis); err != nil {
