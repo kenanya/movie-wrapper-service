@@ -1,21 +1,21 @@
 "# omdb" 
 
-## Description
+## A. Description
 This is OMDB Wrapper Service.
 
 Stack Tech: Golang, Redis, gRPC
 
-## Clone/Download Repo
+## B. Clone/Download Repo
     git clone https://github.com/kenanya/omdb.git
 
-## How to Start
+## C. How to Start
 cd omdb<br/>
 go run cmd\server\main.go
 
-## Consume Service
+## D. Consume Service
 We can use <a href="https://appimage.github.io/BloomRPC/">BloomRPC</a> to test consuming this service. After you download and install the BloomRPC, you have to import the protobuf file at omdb/api/v1/omdb-service.proto. As the default, you will get the initial random value as sample request when the protobuf file has been imported. You can use the initial value or yours to test the service.
 
-## The API documentation
+## E. The API documentation
 Below are the sample requests and expected responses for each API:
 ### 1. Get movie by ID
 #### Sample Request
@@ -80,5 +80,7 @@ Below are the sample requests and expected responses for each API:
 "total_results": "439"
 }
 
+## F. Feature Development
+Unit tests will be added in the near future.
 
 
