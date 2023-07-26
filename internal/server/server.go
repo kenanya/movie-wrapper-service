@@ -65,7 +65,7 @@ func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequ
 	fmt.Printf("datas[0].TotalResults: %s", data.TotalResults)
 
 	// handle error
-	if data.TotalResults == "" && data.Response == "" {
+	if data.Search == nil {
 		errData := external.ErrorBody{}
 		json.Unmarshal(resp, &errData)
 		return nil, status.Error(codes.NotFound, errData.Error)
