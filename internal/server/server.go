@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	api "omdb/api/v1"
 	external "omdb/external"
 	"strconv"
+	"strings"
 )
 
 // We define a server struct that implements the server interface. 🥳🥳🥳
@@ -22,49 +25,56 @@ type grpcServer struct {
 
 func (s *grpcServer) GetMovieByID(ctx context.Context, req *api.GetMovieByIDRequest) (*api.GetMovieByIDResponse, error) {
 
-	_, resp := external.GetMovieByID(req.Id)
-	//if err == ErrIDNotFound {
-	//	return nil, status.Error(codes.NotFound, "id was not found")
-	//}
-	//if err != nil {
-	//	return nil, status.Error(codes.Internal, err.Error())
-	//}
+	err, resp := external.GetMovieByID(req.Id)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
-	//s := string(`{"operation": "get", "key": "example"}`)
 	data := external.MovieDetail{}
-	json.Unmarshal([]byte(resp), &data)
-	fmt.Printf("Actors: %s", data.Actors)
+	json.Unmarshal(resp, &data)
 
+	// handle error
+	if data.ImdbID == "" && data.Title == "" {
+		errData := external.ErrorBody{}
+		json.Unmarshal(resp, &errData)
+		return nil, status.Error(codes.NotFound, errData.Error)
+	}
+
+	actors := strings.Split(data.Actors, ", ")
 	movieByIDResp := &api.GetMovieByIDResponse{
 		Id:        data.ImdbID,
 		Title:     data.Title,
-		Year:      "",
-		Rated:     "",
-		Genre:     "",
-		Plot:      "",
-		Director:  "",
-		Actors:    nil,
-		Language:  "",
-		Country:   "",
-		Type:      "",
-		PosterUrl: "",
+		Year:      data.Year,
+		Rated:     data.Rated,
+		Genre:     data.Genre,
+		Plot:      data.Plot,
+		Director:  data.Director,
+		Actors:    actors,
+		Language:  data.Language,
+		Country:   data.Country,
+		Type:      data.Type,
+		PosterUrl: data.Poster,
 	}
 
 	return movieByIDResp, nil
 }
 
 func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequest) (*api.SearchMoviesResponse, error) {
-	_, resp := external.SearchMovie(req.GetQuery(), req.GetType(), int(req.GetPage()))
-	//if err == ErrIDNotFound {
-	//	return nil, status.Error(codes.NotFound, "id was not found")
-	//}
-	//if err != nil {
-	//	return nil, status.Error(codes.Internal, err.Error())
-	//}
+	err, resp := external.SearchMovie(req.GetQuery(), req.GetType(), int(req.GetPage()))
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	data := external.Movies{}
-	json.Unmarshal([]byte(resp), &data)
+	json.Unmarshal(resp, &data)
 	fmt.Printf("datas[0].TotalResults: %s", data.TotalResults)
+
+	// handle error
+	if data.TotalResults == "" && data.Response == "" {
+		errData := external.ErrorBody{}
+		json.Unmarshal(resp, &errData)
+		return nil, status.Error(codes.NotFound, errData.Error)
+	}
 
 	total, err := strconv.ParseUint(data.TotalResults, 10, 64)
 	if err != nil {

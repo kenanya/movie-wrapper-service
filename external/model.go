@@ -42,3 +42,8 @@ type Movies struct {
 	TotalResults string `json:"totalResults"`
 	Response     string `json:"Response"`
 }
+
+type ErrorBody struct {
+	Response string `json:"Response"`
+	Error    string `json:"Error"`
+}
