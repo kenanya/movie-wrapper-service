@@ -4,8 +4,6 @@ import (
 	"log"
 	"net"
 	"omdb/internal/server"
-	//"github.com/kenanya/jt-video-bank/pkg/cmd"
-	// "github.com/kenanya/jt-video-bank/pkg/api/v1"
 )
 
 func main() {

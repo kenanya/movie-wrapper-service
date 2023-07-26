@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	api "omdb/api/v1"
-	external "omdb/external"
+	"omdb/external"
 	"strconv"
 	"strings"
 )
@@ -17,11 +17,6 @@ import (
 type grpcServer struct {
 	api.UnimplementedOMDBServiceServer
 }
-
-//// We implement the SayHello method of the server interface. 🥳🥳🥳
-//func (s *Server) SayHello(ctx context.Context, in *HelloRequest) (*HelloReply, error) {
-//	return &HelloReply{Message: "Hello, " + in.GetName()}, nil
-//}
 
 func (s *grpcServer) GetMovieByID(ctx context.Context, req *api.GetMovieByIDRequest) (*api.GetMovieByIDResponse, error) {
 
@@ -103,24 +98,9 @@ func (s *grpcServer) SearchMovies(ctx context.Context, req *api.SearchMoviesRequ
 	return searchMovieResp, nil
 }
 
-//func (s *grpcServer) List(ctx context.Context, req *api.ListRequest) (*api.Activities, error) {
-//	activities, err := s.Activities.List(int(req.Offset))
-//	if err != nil {
-//		return nil, status.Error(codes.Internal, err.Error())
-//	}
-//	return &api.Activities{Activities: activities}, nil
-//}
-
 func NewGRPCServer() *grpc.Server {
-	//var acc *Activities
-	//var err error
-	//if acc, err = NewActivities(); err != nil {
-	//	log.Fatal(err)
-	//}
 	gsrv := grpc.NewServer()
-	srv := grpcServer{
-		//	Activities: acc,
-	}
+	srv := grpcServer{}
 	api.RegisterOMDBServiceServer(gsrv, &srv)
 	return gsrv
 }
